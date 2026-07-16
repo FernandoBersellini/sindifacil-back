@@ -5,6 +5,8 @@ import { EmployeeModule } from './employee/employee.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { Employee } from './employee/entities/employee.entity';
+import { AdmModule } from './adm/adm.module';
+import { AssociateModule } from './associate/associate.module';
 
 @Module({
   imports: [EmployeeModule,
@@ -22,6 +24,8 @@ import { Employee } from './employee/entities/employee.entity';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    AdmModule,
+    AssociateModule,
   ],
   controllers: [AppController],
   providers: [AppService],

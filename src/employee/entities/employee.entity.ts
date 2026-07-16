@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Employee {
@@ -12,7 +12,22 @@ export class Employee {
     cpf: string;
     
     @Column()
-    birthDate: Date; 
+    birthDate: Date;
+
+    @Column({ unique: true })
+    email: string;
+
+    @Column()
+    password: string;
+
+    @Column({ default: true })
+    active: boolean;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 }
 
 
