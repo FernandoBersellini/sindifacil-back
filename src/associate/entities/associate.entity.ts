@@ -19,4 +19,16 @@ export class Associate {
 
     @Column({ nullable: true })
     registrationNumber: string;
+
+    @Column({ nullable: true })
+    storageKey: string;
+
+    @Column({ nullable: true })
+    originalFilename: string;
+
+    @Column({ nullable: true })
+    mimeType: string;
+
+    @Column({ nullable: true })
+    uploadedAt: Date;
 }
