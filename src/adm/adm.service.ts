@@ -14,4 +14,8 @@ export class AdmService {
   async findByEmail(email: string) {
     return this.admRepository.findOneBy({email});
   }
+
+  async create(adm: Adm) {
+    return this.admRepository.save(adm);
+  }
 }

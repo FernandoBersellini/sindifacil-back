@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Employee } from './employee/entities/employee.entity';
 import { AdmModule } from './adm/adm.module';
 import { AssociateModule } from './associate/associate.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [EmployeeModule,
@@ -26,6 +27,7 @@ import { AssociateModule } from './associate/associate.module';
     }),
     AdmModule,
     AssociateModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
