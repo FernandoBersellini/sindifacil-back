@@ -19,7 +19,7 @@ import { AuthModule } from './auth/auth.module';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'senhor_cafe101',
+      password: process.env.DB_PASSWORD,
       database: 'sindifacil_db',
       entities: [Employee],
       autoLoadEntities: true,

@@ -1,6 +1,8 @@
+import { Role } from 'src/utils/role';
+
 export class AuthResponseDto {
     token: string
     userId: number
-    userRole: string
+    userRole: Role
     email: string
 }

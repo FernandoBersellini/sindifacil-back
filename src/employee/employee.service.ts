@@ -4,6 +4,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class EmployeeService {
@@ -13,7 +14,8 @@ export class EmployeeService {
     private readonly employeeRepository: Repository<Employee>,
   ) { }
 
-  create(createEmployeeDto: CreateEmployeeDto) {
+  async create(createEmployeeDto: CreateEmployeeDto) {
+    createEmployeeDto.password = await(bcrypt.hash(createEmployeeDto.password, 10));
     return this.employeeRepository.save(createEmployeeDto);
   }
 
@@ -25,7 +27,14 @@ export class EmployeeService {
     return this.employeeRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
+  async findByEmail(email: string) {
+    return this.employeeRepository.findOne({ where: { email } });
+  }
+
+  async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
+    if (updateEmployeeDto.password) {
+      updateEmployeeDto.password = await bcrypt.hash(updateEmployeeDto.password, 10);
+    }
     return this.employeeRepository.update(id, updateEmployeeDto);
   }
 
