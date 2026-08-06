@@ -9,6 +9,7 @@ import { AdmModule } from './adm/adm.module';
 import { AssociateModule } from './associate/associate.module';
 import { AuthModule } from './auth/auth.module';
 import { Adm } from './adm/entities/adm.entity';
+import { DocumentModule } from './document/document.module';
 
 @Module({
   imports: [EmployeeModule,
@@ -29,6 +30,7 @@ import { Adm } from './adm/entities/adm.entity';
     AdmModule,
     AssociateModule,
     AuthModule,
+    DocumentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
