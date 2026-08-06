@@ -1,26 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Associate } from './entities/associate.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AssociateService {
-  create(createAssociateDto: CreateAssociateDto) {
-    return 'This action adds a new associate';
+  constructor(
+    @InjectRepository(Associate)
+    private readonly associateRepository: Repository<Associate>,
+  ) {}
+
+  async create(createAssociateDto: CreateAssociateDto) {
+    return this.associateRepository.save(createAssociateDto);
   }
 
-  findAll() {
-    return `This action returns all associate`;
+  async findAll() {
+    return this.associateRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} associate`;
+  async findOne(id: number) {
+    const associate = await this.associateRepository.findOne({ where: { id } });
+
+    if (associate === null) {
+      throw new NotFoundException('Associado não encontrado');
+    }
+
+    return associate;
   }
 
-  update(id: number, updateAssociateDto: UpdateAssociateDto) {
-    return `This action updates a #${id} associate`;
+  async update(id: number, updateAssociateDto: UpdateAssociateDto) {
+    const result = await this.associateRepository.update(id, updateAssociateDto);
+    if (result.affected === 0) {
+      throw new NotFoundException('Associado não encontrado');
+    }
+    return this.findOne(id);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} associate`;
+  async remove(id: number) {
+    const result = await this.associateRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Associado não encontrado');
+    }
+    return result;
   }
 }

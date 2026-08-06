@@ -8,6 +8,7 @@ import { Employee } from './employee/entities/employee.entity';
 import { AdmModule } from './adm/adm.module';
 import { AssociateModule } from './associate/associate.module';
 import { AuthModule } from './auth/auth.module';
+import { Adm } from './adm/entities/adm.entity';
 
 @Module({
   imports: [EmployeeModule,
@@ -21,7 +22,7 @@ import { AuthModule } from './auth/auth.module';
       username: 'postgres',
       password: process.env.DB_PASSWORD,
       database: 'sindifacil_db',
-      entities: [Employee],
+      entities: [Employee, Adm],
       autoLoadEntities: true,
       synchronize: true,
     }),

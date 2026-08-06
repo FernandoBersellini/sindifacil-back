@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -23,8 +23,12 @@ export class EmployeeService {
     return this.employeeRepository.find();
   }
 
-  findOne(id: number) {
-    return this.employeeRepository.findOne({ where: { id } });
+  async findOne(id: number) {
+    const employee = await this.employeeRepository.findOne({ where: { id } });
+    if (!employee) {
+      throw new NotFoundException('Funcionário não encontrado');
+    }
+    return employee;
   }
 
   async findByEmail(email: string) {
@@ -35,10 +39,18 @@ export class EmployeeService {
     if (updateEmployeeDto.password) {
       updateEmployeeDto.password = await bcrypt.hash(updateEmployeeDto.password, 10);
     }
-    return this.employeeRepository.update(id, updateEmployeeDto);
+    const result = await this.employeeRepository.update(id, updateEmployeeDto);
+    if (result.affected === 0) {
+      throw new NotFoundException('Funcionário não encontrado');
+    }
+    return result;
   }
 
-  remove(id: number) {
-    return this.employeeRepository.delete(id);
+  async remove(id: number) {
+    const result = await this.employeeRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Funcionário não encontrado');
+    }
+    return result;
   }
 }
