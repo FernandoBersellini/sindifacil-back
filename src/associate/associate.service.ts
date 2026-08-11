@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -28,6 +28,37 @@ export class AssociateService {
     }
 
     return associate;
+  }
+
+  async searchAssociate(query: string, field: string = 'name') {
+    if (!query?.trim()) {
+      return [];
+    }
+
+    const searchableColumns: Record<string, string> = {
+      name: 'associate.name',
+      mothersName: 'associate.mothersName',
+      fathersName: 'associate.fathersName',
+      cpf: 'associate.cpf',
+    };
+
+    const column = searchableColumns[field];
+    if (!column) {
+      throw new BadRequestException('Campo de busca inválido');
+    }
+
+    const qb = this.associateRepository.createQueryBuilder('associate');
+
+    if (field === 'cpf') {
+      const digitsOnly = query.replace(/\D/g, '');
+      qb.where(`regexp_replace(${column}, '\\D', '', 'g') ILIKE :query`, {
+        query: `%${digitsOnly}%`,
+      });
+    } else {
+      qb.where(`${column} ILIKE :query`, { query: `%${query.trim()}%` });
+    }
+
+    return qb.getMany();
   }
 
   async update(id: number, updateAssociateDto: UpdateAssociateDto) {

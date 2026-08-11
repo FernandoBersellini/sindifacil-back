@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { AssociateService } from './associate.service';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
@@ -23,9 +23,14 @@ export class AssociateController {
     return this.associateService.findAll();
   }
 
-  @Get(':id')
+  @Get('detail/:id')
   findOne(@Param('id') id: string) {
     return this.associateService.findOne(+id);
+  }
+
+  @Get("search")
+  search(@Query('q') q: string, @Query('field') field: string) {
+    return this.associateService.searchAssociate(q, field);
   }
 
   @Patch(':id')

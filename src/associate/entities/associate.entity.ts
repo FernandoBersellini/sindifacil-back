@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity()
 export class Associate {
@@ -9,26 +9,26 @@ export class Associate {
     name: string;
 
     @Column()
+    cpf: string;
+
+    @Column()
     birthDate: Date;
 
-    @Column()
+    @Column({ nullable: true })
     mothersName: string;
 
-    @Column()
+    @Column({ nullable: true })
     fathersName: string;
 
     @Column({ nullable: true })
     registrationNumber: string;
 
-    @Column({ nullable: true })
-    storageKey: string;
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 
     @Column({ nullable: true })
-    originalFilename: string;
-
-    @Column({ nullable: true })
-    mimeType: string;
-
-    @Column({ nullable: true })
-    uploadedAt: Date;
+    updatedBy: number;
 }
