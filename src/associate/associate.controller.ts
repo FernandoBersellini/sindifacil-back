@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { AssociateService } from './associate.service';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
@@ -9,7 +19,7 @@ import { Role } from 'src/utils/role';
 
 @Controller('associate')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.USER)
+@Roles(Role.EMPLOYEE)
 export class AssociateController {
   constructor(private readonly associateService: AssociateService) {}
 
@@ -28,13 +38,16 @@ export class AssociateController {
     return this.associateService.findOne(+id);
   }
 
-  @Get("search")
+  @Get('search')
   search(@Query('q') q: string, @Query('field') field: string) {
     return this.associateService.searchAssociate(q, field);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAssociateDto: UpdateAssociateDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAssociateDto: UpdateAssociateDto,
+  ) {
     return this.associateService.update(+id, updateAssociateDto);
   }
 

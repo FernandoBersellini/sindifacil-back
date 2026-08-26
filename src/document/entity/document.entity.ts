@@ -1,28 +1,33 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Document {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    associateId: number;
+  @Column()
+  associateId: number;
 
-    @Column()
-    storageKey: string;
+  @Column()
+  storageKey: string;
 
-    @Column()
-    originalFileName: string;
+  @Column()
+  originalFileName: string;
 
-    @Column()
-    mimeType: string;
+  @Column()
+  mimeType: string;
 
-    @Column()
-    fileSize: number;
+  @Column()
+  fileSize: number;
 
-    @CreateDateColumn()
-    uploadedAt: Date;
+  @CreateDateColumn()
+  uploadedAt: Date;
 
-    @Column({ nullable: true })
-    uploadedByEmployeeId?: number;
+  @Column({ nullable: true })
+  uploadedByUserId?: number;
 }

@@ -1,34 +1,40 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class Associate {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column()
-    cpf: string;
+  @Column()
+  cpf: string;
 
-    @Column()
-    birthDate: Date;
+  @Column()
+  birthDate: Date;
 
-    @Column({ nullable: true })
-    mothersName: string;
+  @Column({ nullable: true })
+  mothersName: string;
 
-    @Column({ nullable: true })
-    fathersName: string;
+  @Column({ nullable: true })
+  fathersName: string;
 
-    @Column({ nullable: true })
-    registrationNumber: string;
+  @Column({ nullable: true })
+  registrationNumber: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-    @Column({ nullable: true })
-    updatedBy: number;
+  @Column({ nullable: true })
+  updatedBy: number;
 }

@@ -4,6 +4,12 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 import { Role } from 'src/utils/role';
 import { JwtPayload } from '../strategies/jwt.strategy';
 
+// O administrador acumula todos os acessos do funcionário.
+const ROLE_HIERARCHY: Record<Role, Role[]> = {
+  [Role.ADMIN]: [Role.ADMIN, Role.EMPLOYEE],
+  [Role.EMPLOYEE]: [Role.EMPLOYEE],
+};
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
@@ -19,6 +25,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<{ user: JwtPayload }>();
-    return requiredRoles.includes(request.user?.role);
+    const grantedRoles = ROLE_HIERARCHY[request.user?.role] ?? [];
+    return requiredRoles.some((role) => grantedRoles.includes(role));
   }
 }

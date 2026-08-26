@@ -1,18 +1,15 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { EmployeeModule } from './employee/employee.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { Employee } from './employee/entities/employee.entity';
-import { AdmModule } from './adm/adm.module';
+import { UserModule } from './user/user.module';
 import { AssociateModule } from './associate/associate.module';
 import { AuthModule } from './auth/auth.module';
-import { Adm } from './adm/entities/adm.entity';
 import { DocumentModule } from './document/document.module';
 
 @Module({
-  imports: [EmployeeModule,
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -23,11 +20,10 @@ import { DocumentModule } from './document/document.module';
       username: 'postgres',
       password: process.env.DB_PASSWORD,
       database: 'sindifacil_db',
-      entities: [Employee, Adm],
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AdmModule,
+    UserModule,
     AssociateModule,
     AuthModule,
     DocumentModule,
@@ -35,4 +31,4 @@ import { DocumentModule } from './document/document.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

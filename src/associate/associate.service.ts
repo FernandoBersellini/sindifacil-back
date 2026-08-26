@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAssociateDto } from './dto/create-associate.dto';
 import { UpdateAssociateDto } from './dto/update-associate.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -62,7 +66,10 @@ export class AssociateService {
   }
 
   async update(id: number, updateAssociateDto: UpdateAssociateDto) {
-    const result = await this.associateRepository.update(id, updateAssociateDto);
+    const result = await this.associateRepository.update(
+      id,
+      updateAssociateDto,
+    );
     if (result.affected === 0) {
       throw new NotFoundException('Associado não encontrado');
     }

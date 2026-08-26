@@ -7,11 +7,11 @@ import { STORAGE_PROVIDER } from './utils/storage.provider';
 import { LocalStorageProvider } from './utils/local-storage.provider';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Document])],
-    controllers: [DocumentController],
-    providers: [
-        DocumentService,
-        { provide: STORAGE_PROVIDER, useClass: LocalStorageProvider },
-    ],
+  imports: [TypeOrmModule.forFeature([Document])],
+  controllers: [DocumentController],
+  providers: [
+    DocumentService,
+    { provide: STORAGE_PROVIDER, useClass: LocalStorageProvider },
+  ],
 })
-export class DocumentModule { }
+export class DocumentModule {}

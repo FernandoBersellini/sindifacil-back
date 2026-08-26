@@ -1,3 +1,3 @@
 export class CreateDocumentDto {
-    associateId: number;
+  associateId: number;
 }

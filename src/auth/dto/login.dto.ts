@@ -1,9 +1,4 @@
-export class AdmLoginDto {
-    email: string;
-    password: string;
-}
-
-export class EmployeeLoginDto {
-    email: string;
-    password: string;
+export class LoginDto {
+  email: string;
+  password: string;
 }
