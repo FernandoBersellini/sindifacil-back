@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { UpdateAssociateDto } from './dto/update-associate.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Associate } from './entities/associate.entity';
 import { Repository } from 'typeorm';
+import { isValidCpf } from 'src/utils/cpf-validator';
 
 @Injectable()
 export class AssociateService {
@@ -17,6 +19,9 @@ export class AssociateService {
   ) {}
 
   async create(createAssociateDto: CreateAssociateDto) {
+    if (!isValidCpf(createAssociateDto.cpf)) {
+      throw new ConflictException('CPF inválido');
+    }
     return this.associateRepository.save(createAssociateDto);
   }
 
@@ -66,6 +71,13 @@ export class AssociateService {
   }
 
   async update(id: number, updateAssociateDto: UpdateAssociateDto) {
+    if (
+      updateAssociateDto.cpf !== undefined &&
+      !isValidCpf(updateAssociateDto.cpf)
+    ) {
+      throw new ConflictException('CPF inválido');
+    }
+
     const result = await this.associateRepository.update(
       id,
       updateAssociateDto,

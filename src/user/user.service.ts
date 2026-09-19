@@ -15,6 +15,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Role } from 'src/utils/role';
+import { isValidCpf } from 'src/utils/cpf-validator';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -26,8 +27,6 @@ export class UserService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {}
 
-  // Cria o primeiro administrador quando o banco ainda não tem nenhum,
-  // substituindo a antiga linha fixa da tabela adm.
   async onModuleInit() {
     if ((await this.countAdmins()) > 0) {
       return;
@@ -46,7 +45,6 @@ export class UserService implements OnModuleInit {
     await this.userRepository.save(
       this.userRepository.create({
         name: 'Administrador',
-        // cpf fica nulo: a coluna é unique, e '' ocuparia o valor para todos.
         email,
         password: await bcrypt.hash(password, 10),
         role: Role.ADMIN,
@@ -56,10 +54,11 @@ export class UserService implements OnModuleInit {
     this.logger.log(`Administrador inicial criado: ${email}`);
   }
 
-  // Os campos são copiados um a um de propósito. Não há ValidationPipe global,
-  // então o corpo da requisição chega cru — espalhar o DTO deixaria um "role"
-  // enviado pelo cliente passar direto para o banco.
   async create(createUserDto: CreateUserDto) {
+    if (!isValidCpf(createUserDto.cpf)) {
+      throw new ConflictException('CPF inválido');
+    }
+
     const user = await this.userRepository.save(
       this.userRepository.create({
         name: createUserDto.name,
@@ -91,9 +90,9 @@ export class UserService implements OnModuleInit {
   // Único ponto que expõe o hash da senha — a coluna é select: false.
   async findByEmailForAuth(email: string) {
     return this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.email = :email', { email })
+      .createQueryBuilder('users')
+      .addSelect('users.password')
+      .where('users.email = :email', { email })
       .getOne();
   }
 
@@ -108,8 +107,10 @@ export class UserService implements OnModuleInit {
       await this.assertNotLastAdmin(user, 'desativar');
     }
 
-    // Montado campo a campo pelo mesmo motivo de create(): "role" nunca
-    // muda por aqui, apenas por changeRole().
+    if (updateUserDto.cpf !== undefined && !isValidCpf(updateUserDto.cpf)) {
+      throw new ConflictException('CPF inválido');
+    }
+
     const changes: QueryDeepPartialEntity<User> = {};
     if (updateUserDto.name !== undefined) changes.name = updateUserDto.name;
     if (updateUserDto.cpf !== undefined) changes.cpf = updateUserDto.cpf;
@@ -134,8 +135,6 @@ export class UserService implements OnModuleInit {
       return user;
     }
 
-    // Rebaixar o próprio acesso é permitido, desde que outro administrador
-    // já exista — é assim que a administração é repassada.
     if (role !== Role.ADMIN) {
       await this.assertNotLastAdmin(user, 'rebaixar');
     }
@@ -158,7 +157,6 @@ export class UserService implements OnModuleInit {
     return user;
   }
 
-  // Impede que o sistema fique sem nenhum administrador ativo.
   private async assertNotLastAdmin(user: User, action: string) {
     if (user.role !== Role.ADMIN || !user.active) {
       return;
