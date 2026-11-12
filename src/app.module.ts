@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { AssociateModule } from './associate/associate.module';
 import { AuthModule } from './auth/auth.module';
 import { DocumentModule } from './document/document.module';
+import { MappingModule } from './mapping/mapping.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DocumentModule } from './document/document.module';
     AssociateModule,
     AuthModule,
     DocumentModule,
+    MappingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

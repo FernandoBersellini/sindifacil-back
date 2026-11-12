@@ -54,6 +54,11 @@ export class DocumentController {
     return this.documentService.findAllByAssociate(+associateId);
   }
 
+  @Get('pending')
+  findPending() {
+    return this.documentService.findPending();
+  }
+
   @Get('detail/:id')
   findOne(@Param('id') id: string) {
     return this.documentService.findOne(+id);
