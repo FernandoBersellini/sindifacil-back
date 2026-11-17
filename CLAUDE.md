@@ -32,7 +32,7 @@ Server listens on `process.env.PORT ?? 5555`, global prefix `/api/v1`. CORS is c
 
 ## Architecture
 
-Standard Nest module-per-domain layout under `src/`: each domain (`user/`, `associate/`, `document/`, `auth/`) has its own `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`, and `entities/`. `AppModule` ([src/app.module.ts](src/app.module.ts)) wires everything together and configures TypeORM directly inline (Postgres, `synchronize: true`, `autoLoadEntities: true`) — there is no separate database config module or migrations setup yet.
+Standard Nest module-per-domain layout under `src/`: each domain (`user/`, `associate/`, `document/`, `mapping/`, `auth/`) has its own `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`, and `entities/`. `AppModule` ([src/app.module.ts](src/app.module.ts)) wires everything together and configures TypeORM directly inline (Postgres, `synchronize: true`, `autoLoadEntities: true`) — there is no separate database config module or migrations setup yet.
 
 ### One `User` entity, role as a column
 
@@ -58,14 +58,40 @@ On startup `UserService.onModuleInit` seeds the first ADMIN from `ADMIN_EMAIL` /
 
 ### Associate entity mirrors the physical archive
 
-`Associate` ([src/associate/entities/associate.entity.ts](src/associate/entities/associate.entity.ts)) fields (`name`, `birthDate`, `mothersName`, `fathersName`, `registrationNumber`) are driven directly by the fields present on the physical paper "ficha" archive being digitized — when extending this entity, check against the physical form rather than inventing new fields. `storageKey`, `originalFilename`, `mimeType`, `uploadedAt` are metadata for the associated scanned document file; actual file storage (planned: R2/S3) is not yet implemented, so these columns are currently unused placeholders.
+`Associate` ([src/associate/entities/associate.entity.ts](src/associate/entities/associate.entity.ts)) fields (`name`, `cpf`, `birthDate`, `mothersName`, `fathersName`, `registrationNumber`) are driven directly by the fields present on the physical paper "ficha" archive being digitized — when extending this entity, check against the physical form rather than inventing new fields. File metadata used to live on this entity as unused placeholder columns (`storageKey`/`originalFilename`/`mimeType`/`uploadedAt`); it has since moved to the separate `Document` entity below, so `Associate` no longer carries any file columns.
+
+`AssociateService.searchAssociate` ([src/associate/associate.service.ts](src/associate/associate.service.ts)) backs `GET /associate/search?q=&field=`, searching by `name` | `mothersName` | `fathersName` | `cpf` (default `name`) via a case-insensitive `ILIKE`; `cpf` search strips non-digit characters from both sides first so formatting doesn't matter.
+
+### Document entity and the storage provider abstraction
+
+`Document` ([src/document/entity/document.entity.ts](src/document/entity/document.entity.ts)) is a scanned file attached to an `Associate` (many-to-one by `associateId`, not FK-enforced). File reads/writes go through a `StorageProvider` interface ([src/document/utils/storage.provider.ts](src/document/utils/storage.provider.ts)) injected via the `STORAGE_PROVIDER` token, rather than `DocumentService` touching the filesystem directly. The only implementation today is `LocalStorageProvider` ([src/document/utils/local-storage.provider.ts](src/document/utils/local-storage.provider.ts)), writing to a local `uploads/` folder — this is a placeholder for a planned R2/S3 provider. When adding cloud storage, implement `StorageProvider` and swap the `useClass` in `DocumentModule` ([src/document/document.module.ts](src/document/document.module.ts)); don't change `DocumentController`/`DocumentService` to talk to a specific backend directly.
+
+`GET /documents/download/:id` streams the file back with `Content-Disposition: inline`, which is the only way file content is currently exposed — `storageKey` is an internal path, not a public URL, and there is no static serving of `uploads/`.
+
+`PATCH /documents/replace/:id` swaps the file of an existing document (e.g. a bad scan) while keeping the same record, associate and mapping. `DocumentService.replaceFile` uploads the new file first, updates the row, and only then deletes the old file; if the DB update fails it deletes the new file instead. Keep that order so a failure never leaves the row pointing at a missing file. `GET /documents/list/:associateId` returns each document with its `mapping` joined in (`null` = awaiting allocation), and `GET /documents/pending` lists documents with no mapping.
+
+### Mapping: physical location of each ficha
+
+`Mapping` ([src/mapping/entities/mapping.entity.ts](src/mapping/entities/mapping.entity.ts)) records where a document's paper ficha sits in the archive: `cabinet` + `drawer`, with no position inside the drawer. A document has zero or one mapping. `@OneToOne` + `@JoinColumn` on `documentId` enforces uniqueness in the DB, and deleting the document cascades to its mapping. A document without a mapping is "aguardando alocação".
+
+The archive structure (cabinets, drawers, `DRAWER_CAPACITY = 100`) lives in config, not a table: [src/mapping/archive.config.ts](src/mapping/archive.config.ts). Its order is the fill sequence used by `GET /mappings/suggest/:documentId` (first drawer below capacity). The current 5 cabinets × 4 drawers is an unconfirmed estimate. Before removing drawers from it, move the fichas mapped to them.
+
+`MappingService.allocate`/`update` count occupancy and save inside one transaction, guarded by a per-drawer `pg_advisory_xact_lock`, so concurrent allocations can't overfill a drawer. Keep any new write path that changes a drawer's occupancy inside that lock. A full drawer returns `409` with `occupancy`, `capacity` and a `suggestion`. The exception is `alreadyStored: true` (a ficha already physically in that drawer), which may exceed capacity only with `acknowledgeOverCapacity: true`. `DELETE /mappings/remove/:documentId` only unallocates; the document stays. All mapping routes are keyed by `documentId`, not by mapping id, and require `Role.EMPLOYEE`.
+
+Business rules and their codes (RN1–RN8, E1–E5) referenced in the code comments are described in `docs/mapping.md`. Note that `docs/` is git-ignored, so it exists only locally.
+
+### CPF validation
+
+`isValidCpf` ([src/utils/cpf-validator.ts](src/utils/cpf-validator.ts)) checks the standard Brazilian CPF check-digit algorithm (not just format). Both `UserService` (create/update) and `AssociateService` (create/update) call it and throw `ConflictException` (`"CPF inválido"`, 409) on failure — follow that same exception type for consistency rather than `BadRequestException`, since that's the established pattern for this specific validation.
 
 ### Controller route conventions
 
-Controllers use explicit action-named subpaths rather than bare REST verbs on the resource root, e.g. `POST /users/create`, `GET /users/list`, `GET /users/detail/:id`, `PATCH /users/update/:id`, `DELETE /users/remove/:id`. Follow this pattern for new endpoints on existing or new resources rather than switching to bare `POST /users`, `GET /users/:id`, etc. (`AssociateController` predates the convention and still uses bare verbs.)
+Controllers use explicit action-named subpaths rather than bare REST verbs on the resource root, e.g. `POST /users/create`, `GET /users/list`, `GET /users/detail/:id`, `PATCH /users/update/:id`, `DELETE /users/remove/:id`. Follow this pattern for new endpoints on existing or new resources rather than switching to bare `POST /users`, `GET /users/:id`, etc. (`AssociateController` predates the convention and still mixes bare verbs for create/list/update/delete with an action subpath only for `detail/:id` and `search`.)
 
 ### DTOs
 
 DTOs are plain classes with **no `class-validator` decorators**, and there is no global `ValidationPipe` in [src/main.ts](src/main.ts). Update DTOs extend `PartialType` from `@nestjs/mapped-types` *and* restate their fields as optional. Keep new DTOs consistent with this style unless a broader validation approach is deliberately introduced.
+
+Exceptions: `UpdateMappingDto` deliberately does not use `PartialType`, because `cabinet` and `drawer` are always sent together. Numeric route params in `MappingController` are parsed with `ParseIntPipe`; older controllers still use `+id`.
 
 Because nothing validates or strips request bodies at runtime, a DTO's type is **not** a runtime guarantee — extra client-supplied fields reach the service untouched. Any service handling a privilege-bearing or otherwise sensitive field must copy fields explicitly instead of spreading the DTO into `save()`/`update()`; see `UserService.create`/`update`.
