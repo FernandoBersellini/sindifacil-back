@@ -6,6 +6,7 @@ import {
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
+  Patch,
   Post,
   Req,
   Res,
@@ -47,6 +48,21 @@ export class DocumentController {
       file,
       req.user.id,
     );
+  }
+
+  @Patch('replace/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  replaceFile(
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new MaxFileSizeValidator({ maxSize: 15 * 1024 * 1024 })],
+      }),
+    )
+    file: Express.Multer.File,
+    @Req() req: { user: JwtPayload },
+  ) {
+    return this.documentService.replaceFile(+id, file, req.user.id);
   }
 
   @Get('list/:associateId')

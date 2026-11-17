@@ -38,6 +38,42 @@ export class DocumentService {
     });
   }
 
+  // Troca o PDF de um documento existente (ex.: digitalização ruim). O registro,
+  // o associado e o mapeamento continuam os mesmos; só o arquivo muda.
+  async replaceFile(
+    id: number,
+    file: Express.Multer.File,
+    uploadedByUserId: number,
+  ) {
+    const document = await this.findOne(id);
+    const oldStorageKey = document.storageKey;
+
+    const key = `${document.associateId}/${Date.now()}-${file.originalname}`;
+    const storageKey = await this.storageProvider.upload(
+      file.buffer,
+      key,
+      file.mimetype,
+    );
+
+    try {
+      await this.documentRepository.update(id, {
+        storageKey,
+        originalFileName: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        uploadedByUserId,
+      });
+    } catch (error) {
+      // O banco não foi atualizado: descarta o arquivo novo e mantém o antigo.
+      await this.storageProvider.delete(storageKey);
+      throw error;
+    }
+
+    // Só apaga o arquivo antigo depois que o banco já aponta para o novo.
+    await this.storageProvider.delete(oldStorageKey);
+    return this.findOne(id);
+  }
+
   // Cada documento vem com seu mapeamento em `mapping` (null = aguardando
   // alocação), para a página do associado mostrar a localização.
   findAllByAssociate(associateId: number) {
